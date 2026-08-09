@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "만다라트",
     short_name: "만다라트",
-    description: "스티커와 이미지로 꾸미는 만다라트 목표 관리 앱",
+    description: "목표를 잘게 쪼개 실행하는 만다라트 목표 관리 앱",
     start_url: "/",
     scope: "/",
     display: "standalone",

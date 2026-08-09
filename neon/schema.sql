@@ -57,7 +57,6 @@ create table if not exists "goals" (
   status text not null default 'todo',
   priority text not null default 'medium',
   due_date text,
-  stickers jsonb not null default '[]'::jsonb,
   image_url text,
   created_at text not null,
   updated_at text not null,

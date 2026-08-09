@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { getAuth } from "@/lib/auth";
 import { getDb, hasDbConfig } from "@/lib/db";
 import { goals } from "@/lib/db/schema";
-import type { Goal, GoalSticker } from "@/lib/types";
+import type { Goal } from "@/lib/types";
 
 export const runtime = "nodejs";
 
@@ -11,22 +11,6 @@ async function requireUserId(request: Request) {
   if (!hasDbConfig()) return null;
   const session = await getAuth().api.getSession({ headers: request.headers as Headers });
   return session?.user.id ?? null;
-}
-
-function sanitizeStickers(value: unknown): GoalSticker[] {
-  if (!Array.isArray(value)) return [];
-  return value
-    .filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null)
-    .map((item) => ({
-      id: typeof item.id === "string" ? item.id : crypto.randomUUID(),
-      src: typeof item.src === "string" ? item.src : "",
-      name: typeof item.name === "string" ? item.name : "sticker",
-      x: typeof item.x === "number" ? item.x : 50,
-      y: typeof item.y === "number" ? item.y : 30,
-      size: typeof item.size === "number" ? item.size : 28,
-      rotation: typeof item.rotation === "number" ? item.rotation : 0
-    }))
-    .filter((item) => item.src);
 }
 
 type OwnedGoal = Goal & { ownerId: string };
@@ -47,7 +31,6 @@ function sanitizeGoal(value: unknown, ownerId: string): OwnedGoal | null {
     status: raw.status === "doing" || raw.status === "done" ? raw.status : "todo",
     priority: raw.priority === "low" || raw.priority === "high" ? raw.priority : "medium",
     dueDate: typeof raw.dueDate === "string" ? raw.dueDate : null,
-    stickers: sanitizeStickers(raw.stickers),
     imageUrl: typeof raw.imageUrl === "string" ? raw.imageUrl : null,
     createdAt: typeof raw.createdAt === "string" ? raw.createdAt : nowIso,
     updatedAt: typeof raw.updatedAt === "string" ? raw.updatedAt : nowIso
@@ -89,7 +72,6 @@ export async function PUT(request: Request) {
           status: sql`excluded.status`,
           priority: sql`excluded.priority`,
           dueDate: sql`excluded.due_date`,
-          stickers: sql`excluded.stickers`,
           imageUrl: sql`excluded.image_url`,
           updatedAt: sql`excluded.updated_at`
         }

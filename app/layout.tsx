@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "만다라트",
-  description: "스티커와 이미지로 꾸미는 만다라트 목표 관리 PWA",
+  description: "목표를 잘게 쪼개 실행하는 만다라트 목표 관리 PWA",
   applicationName: "만다라트",
   icons: {
     icon: [

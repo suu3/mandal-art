@@ -1,14 +1,17 @@
 "use client";
 
-import { Check, ChevronRight, ChevronUp, Download, FileJson, FileUp, ImagePlus, LogIn, LogOut, Moon, Plus, Save, Sun, TableProperties, Trash2 } from "lucide-react";
-import { ChangeEvent, PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef, useState } from "react";
+import { Check, ChevronRight, ChevronUp, Download, FileJson, FileUp, LogIn, LogOut, Moon, Plus, RotateCcw, Save, Sun, TableProperties, Trash2 } from "lucide-react";
+import { ChangeEvent, MouseEvent as ReactMouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toPng } from "html-to-image";
 import { authClient } from "@/lib/auth-client";
 import { sampleGoals } from "@/lib/sample-goals";
-import type { Goal, GoalPriority, GoalStatus, GoalSticker } from "@/lib/types";
+import type { Goal, GoalPriority, GoalStatus } from "@/lib/types";
+
+const LOCAL_KEY = "madalart-next-goals";
+const SHARE_DATE_FORMATTER = new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium" });
 
 const authSchema = z.object({
   email: z.string().min(1, "이메일을 입력해주세요.").email("올바른 이메일 형식이 아니에요."),
@@ -16,9 +19,6 @@ const authSchema = z.object({
 });
 
 type AuthFormValues = z.infer<typeof authSchema>;
-
-const LOCAL_KEY = "madalart-next-goals";
-const SHARE_DATE_FORMATTER = new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium" });
 
 const statusLabels: Record<GoalStatus, string> = {
   todo: "예정",
@@ -34,6 +34,23 @@ const priorityLabels: Record<GoalPriority, string> = {
 
 function now() {
   return new Date().toISOString();
+}
+
+function blankRootGoal(ownerId: string | null): Goal {
+  return {
+    id: "root",
+    ownerId,
+    parentId: null,
+    slot: 0,
+    title: "나의 목표",
+    description: "중앙 칸을 눌러 핵심 목표를 정하고, 주변 8칸에 실행 목표를 채워보세요.",
+    status: "todo",
+    priority: "medium",
+    dueDate: null,
+    imageUrl: null,
+    createdAt: now(),
+    updatedAt: now()
+  };
 }
 
 function safeFileName(value: string) {
@@ -54,41 +71,14 @@ function downloadFile(fileName: string, href: string) {
   link.remove();
 }
 
-function readFileAsDataUrl(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.addEventListener("load", () => resolve(String(reader.result)));
-    reader.addEventListener("error", () => reject(reader.error));
-    reader.readAsDataURL(file);
-  });
-}
-
 function escapeCsvCell(value: string | number | null | undefined) {
   const text = String(value ?? "");
   return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
-function normalizeStickers(value: unknown): GoalSticker[] {
-  if (!Array.isArray(value)) return [];
-
-  return value
-    .filter((sticker): sticker is Partial<GoalSticker> => typeof sticker === "object" && sticker !== null && "src" in sticker)
-    .map((sticker) => ({
-      id: typeof sticker.id === "string" ? sticker.id : crypto.randomUUID(),
-      src: typeof sticker.src === "string" ? sticker.src : "",
-      name: typeof sticker.name === "string" ? sticker.name : "sticker",
-      x: typeof sticker.x === "number" ? sticker.x : 50,
-      y: typeof sticker.y === "number" ? sticker.y : 30,
-      size: typeof sticker.size === "number" ? sticker.size : 28,
-      rotation: typeof sticker.rotation === "number" ? sticker.rotation : 0
-    }))
-    .filter((sticker) => sticker.src);
-}
-
 function normalizeGoals(goals: Goal[]) {
   return goals.map((goal) => ({
     ...goal,
-    stickers: normalizeStickers(goal.stickers),
     imageUrl: goal.imageUrl ?? null,
     dueDate: goal.dueDate ?? null
   }));
@@ -113,7 +103,6 @@ function parseImportedGoals(value: unknown, fallbackOwnerId: string | null): Goa
       status: goal.status === "doing" || goal.status === "done" ? goal.status : "todo",
       priority: goal.priority === "low" || goal.priority === "high" ? goal.priority : "medium",
       dueDate: typeof goal.dueDate === "string" ? goal.dueDate : null,
-      stickers: normalizeStickers(goal.stickers),
       imageUrl: typeof goal.imageUrl === "string" ? goal.imageUrl : null,
       createdAt: typeof goal.createdAt === "string" ? goal.createdAt : now(),
       updatedAt: now()
@@ -160,24 +149,50 @@ function canMutateGoalDirectly(goals: Goal[], goal: Goal) {
   return childrenOf(goals, goal.id).length === 0;
 }
 
+function burstParticles(x: number, y: number) {
+  const rootStyles = getComputedStyle(document.documentElement);
+  const colors = [
+    rootStyles.getPropertyValue("--ok-ink").trim() || "#3fbf5f",
+    rootStyles.getPropertyValue("--ink").trim() || "#ededed",
+    rootStyles.getPropertyValue("--muted").trim() || "#8f8f8f"
+  ];
+  const host = document.createElement("div");
+  host.style.cssText = "position:fixed;inset:0;z-index:9999;pointer-events:none;";
+  document.body.appendChild(host);
+
+  for (let i = 0; i < 18; i += 1) {
+    const particle = document.createElement("span");
+    const size = 4 + Math.random() * 5;
+    particle.style.cssText = `position:absolute;left:${x}px;top:${y}px;width:${size}px;height:${size}px;border-radius:${
+      Math.random() < 0.5 ? "999px" : "1px"
+    };background:${colors[i % colors.length]};will-change:transform,opacity;`;
+    host.appendChild(particle);
+
+    const angle = (i / 18) * Math.PI * 2 + Math.random() * 0.6;
+    const distance = 36 + Math.random() * 64;
+    particle.animate(
+      [
+        { transform: "translate(-50%, -50%) scale(1)", opacity: 1 },
+        {
+          transform: `translate(calc(-50% + ${Math.cos(angle) * distance}px), calc(-50% + ${
+            Math.sin(angle) * distance + 46
+          }px)) scale(0.3) rotate(${Math.random() * 300 - 150}deg)`,
+          opacity: 0
+        }
+      ],
+      { duration: 650 + Math.random() * 350, easing: "cubic-bezier(0.16, 0.84, 0.34, 1)", fill: "forwards" }
+    );
+  }
+
+  window.setTimeout(() => host.remove(), 1100);
+}
+
 export function MandalArtApp() {
   const boardRef = useRef<HTMLDivElement>(null);
-  const contentSurfaceRef = useRef<HTMLDivElement>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
-  const dragStateRef = useRef<{
-    goalId: string;
-    stickerId: string;
-    mode: "move" | "resize" | "rotate";
-    rect: DOMRect;
-    startX: number;
-    startY: number;
-    startAngle: number;
-    startSticker: GoalSticker;
-  } | null>(null);
   const [goals, setGoals] = useState<Goal[]>(sampleGoals);
   const [currentGoalId, setCurrentGoalId] = useState("root");
   const [selectedGoalId, setSelectedGoalId] = useState("root");
-  const [selectedStickerId, setSelectedStickerId] = useState<string | null>(null);
   const [storageMode, setStorageMode] = useState<"loading" | "local" | "cloud">("loading");
   const [authError, setAuthError] = useState<string | null>(null);
   const [isAuthBusy, setIsAuthBusy] = useState(false);
@@ -191,7 +206,6 @@ export function MandalArtApp() {
     defaultValues: { email: "", password: "" }
   });
   const [isSaving, setIsSaving] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   const [isExportingPng, setIsExportingPng] = useState(false);
   const [dragGoalId, setDragGoalId] = useState<string | null>(null);
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
@@ -218,13 +232,11 @@ export function MandalArtApp() {
 
   const currentGoal = goals.find((goal) => goal.id === currentGoalId) ?? goals[0];
   const selectedGoal = goals.find((goal) => goal.id === selectedGoalId) ?? currentGoal;
-  const selectedSticker = currentGoal.stickers.find((sticker) => sticker.id === selectedStickerId) ?? null;
   const children = useMemo(() => childrenOf(goals, currentGoal.id), [goals, currentGoal.id]);
   const currentProgress = progressOf(goals, currentGoal.id);
   const selectedProgress = progressOf(goals, selectedGoal.id);
   const slots = Array.from({ length: 8 }, (_, slot) => children.find((child) => child.slot === slot) ?? null);
   const boardItems = [...slots.slice(0, 4), currentGoal, ...slots.slice(4)];
-  const visibleStickers = currentGoal.stickers.map((sticker) => ({ goal: currentGoal, sticker }));
 
   useEffect(() => {
     if (isAuthPending) return;
@@ -239,9 +251,7 @@ export function MandalArtApp() {
           const payload = (await response.json()) as { goals: Goal[] };
           let nextGoals = normalizeGoals(payload.goals ?? []);
           if (!nextGoals.length) {
-            const localBackup = window.localStorage.getItem(LOCAL_KEY);
-            const seed = localBackup ? normalizeGoals(JSON.parse(localBackup)) : sampleGoals;
-            nextGoals = (seed.length ? seed : sampleGoals).map((goal) => ({ ...goal, ownerId }));
+            nextGoals = [blankRootGoal(ownerId)];
             await fetch("/api/goals", {
               method: "PUT",
               headers: { "Content-Type": "application/json" },
@@ -251,6 +261,8 @@ export function MandalArtApp() {
 
           if (!active) return;
           setGoals(nextGoals);
+          setCurrentGoalId((prev) => (nextGoals.some((goal) => goal.id === prev) ? prev : nextGoals[0].id));
+          setSelectedGoalId((prev) => (nextGoals.some((goal) => goal.id === prev) ? prev : nextGoals[0].id));
           setStorageMode("cloud");
           return;
         } catch (error) {
@@ -269,12 +281,6 @@ export function MandalArtApp() {
       active = false;
     };
   }, [ownerId, isAuthPending]);
-
-  useEffect(() => {
-    if (selectedStickerId && !currentGoal.stickers.some((sticker) => sticker.id === selectedStickerId)) {
-      setSelectedStickerId(currentGoal.stickers[0]?.id ?? null);
-    }
-  }, [currentGoal.id, currentGoal.stickers, selectedStickerId]);
 
   async function persist(nextGoals: Goal[]) {
     setGoals(nextGoals);
@@ -330,7 +336,6 @@ export function MandalArtApp() {
 
   async function signOut() {
     await authClient.signOut();
-    setSelectedStickerId(null);
   }
 
   function patchGoal(goalId: string, patch: Partial<Goal>) {
@@ -338,48 +343,6 @@ export function MandalArtApp() {
       goal.id === goalId ? { ...goal, ...patch, updatedAt: now(), ownerId: ownerId ?? goal.ownerId } : goal
     );
     persist(nextGoals);
-  }
-
-  function updateSticker(goalId: string, stickerId: string, patch: Partial<GoalSticker>, shouldPersist = false) {
-    const nextGoals = goals.map((goal) =>
-      goal.id === goalId
-        ? {
-            ...goal,
-            stickers: goal.stickers.map((sticker) => (sticker.id === stickerId ? { ...sticker, ...patch } : sticker)),
-            updatedAt: now(),
-            ownerId: ownerId ?? goal.ownerId
-          }
-        : goal
-    );
-
-    if (shouldPersist) {
-      persist(nextGoals);
-    } else {
-      setGoals(nextGoals);
-    }
-  }
-
-  function createGoal(slot: number) {
-    const id = `goal-${crypto.randomUUID()}`;
-    const goal: Goal = {
-      id,
-      ownerId,
-      parentId: currentGoal.id,
-      slot,
-      title: "새 목표",
-      description: "이미지 스티커를 붙여서 목표를 더 잘 보이게 만들어보세요.",
-      status: "todo",
-      priority: "medium",
-      dueDate: null,
-      stickers: [],
-      imageUrl: null,
-      createdAt: now(),
-      updatedAt: now()
-    };
-
-    persist([...goals, goal]);
-    setSelectedGoalId(id);
-    setSelectedStickerId(null);
   }
 
   function moveGoalToSlot(goalId: string, targetSlot: number) {
@@ -403,51 +366,38 @@ export function MandalArtApp() {
     setDragOverSlot(null);
   }
 
-  async function uploadStickerFile(file: File) {
-    return readFileAsDataUrl(file);
+  function handleWorkspaceClick(event: ReactMouseEvent<HTMLElement>) {
+    const target = event.target as HTMLElement;
+    if (target.closest(".goalCard, .breadcrumb, .heroStats")) return;
+    setSelectedGoalId(currentGoal.id);
   }
 
-  async function addStickerFiles(event: ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files ?? []);
-    if (!files.length) return;
+  function createGoal(slot: number) {
+    const id = `goal-${crypto.randomUUID()}`;
+    const goal: Goal = {
+      id,
+      ownerId,
+      parentId: currentGoal.id,
+      slot,
+      title: "새 목표",
+      description: "",
+      status: "todo",
+      priority: "medium",
+      dueDate: null,
+      imageUrl: null,
+      createdAt: now(),
+      updatedAt: now()
+    };
 
-    setIsUploading(true);
-    try {
-      const newStickers = await Promise.all(
-        files.map(async (file, index) => ({
-          id: crypto.randomUUID(),
-          src: await uploadStickerFile(file),
-          name: file.name,
-          x: Math.min(88, 48 + index * 4),
-          y: Math.min(82, 30 + index * 5),
-          size: 12,
-          rotation: 0
-        }))
-      );
-
-      patchGoal(currentGoal.id, {
-        stickers: [...currentGoal.stickers, ...newStickers]
-      });
-      setSelectedStickerId(newStickers.at(-1)?.id ?? null);
-    } catch (error) {
-      console.error("이미지 업로드에 실패했습니다.", error);
-    } finally {
-      setIsUploading(false);
-    }
-
-    event.target.value = "";
+    persist([...goals, goal]);
+    setSelectedGoalId(id);
   }
 
-  function removeSelectedSticker() {
-    if (!selectedSticker) return;
-    const nextStickers = currentGoal.stickers.filter((sticker) => sticker.id !== selectedSticker.id);
-    patchGoal(currentGoal.id, { stickers: nextStickers });
-    setSelectedStickerId(nextStickers[0]?.id ?? null);
-  }
-
-  function toggleGoalDone(goal: Goal) {
+  function toggleGoalDone(goal: Goal, origin?: { x: number; y: number }) {
     if (!canMutateGoalDirectly(goals, goal)) return;
-    patchGoal(goal.id, { status: goal.status === "done" ? "todo" : "done" });
+    const nextDone = goal.status !== "done";
+    patchGoal(goal.id, { status: nextDone ? "done" : "todo" });
+    if (nextDone && origin) burstParticles(origin.x, origin.y);
   }
 
   async function removeGoal(goal: Goal) {
@@ -463,7 +413,6 @@ export function MandalArtApp() {
     window.localStorage.setItem(LOCAL_KEY, JSON.stringify(nextGoals));
     setSelectedGoalId(nextSelectedId);
     setCurrentGoalId(nextCurrentId);
-    setSelectedStickerId(null);
 
     if (storageMode !== "cloud" || !ownerId) return;
 
@@ -482,10 +431,48 @@ export function MandalArtApp() {
     }
   }
 
+  async function resetBoard() {
+    if (!window.confirm("모든 목표를 삭제하고 처음 상태로 되돌릴까요?")) return;
+
+    if (storageMode === "cloud" && ownerId) {
+      const removingIds = goals.map((goal) => goal.id);
+      const root = blankRootGoal(ownerId);
+      setGoals([root]);
+      window.localStorage.setItem(LOCAL_KEY, JSON.stringify([root]));
+      setCurrentGoalId(root.id);
+      setSelectedGoalId(root.id);
+
+      setIsSaving(true);
+      try {
+        if (removingIds.length) {
+          await fetch("/api/goals", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ids: removingIds })
+          });
+        }
+        await fetch("/api/goals", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ goals: [root] })
+        });
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsSaving(false);
+      }
+      return;
+    }
+
+    persist(sampleGoals.map((goal) => ({ ...goal, ownerId })));
+    setCurrentGoalId("root");
+    setSelectedGoalId("root");
+  }
+
   function exportJson() {
     const payload = {
-      app: "Madal Art",
-      version: 1,
+      app: "만다라트",
+      version: 2,
       exportedAt: now(),
       currentGoalId: currentGoal.id,
       selectedGoalId: selectedGoal.id,
@@ -507,12 +494,11 @@ export function MandalArtApp() {
       if (!nextGoals.length) throw new Error("No goals in import payload");
 
       const hasRoot = nextGoals.some((goal) => goal.parentId === null);
-      const restoredGoals = hasRoot ? nextGoals : [{ ...sampleGoals[0], ownerId, updatedAt: now() }, ...nextGoals];
+      const restoredGoals = hasRoot ? nextGoals : [blankRootGoal(ownerId), ...nextGoals];
       await persist(restoredGoals);
       const nextCurrentGoalId = restoredGoals.find((goal) => goal.parentId === null)?.id ?? restoredGoals[0].id;
       setCurrentGoalId(nextCurrentGoalId);
       setSelectedGoalId(nextCurrentGoalId);
-      setSelectedStickerId(null);
     } catch (error) {
       console.error("JSON 복원에 실패했습니다.", error);
     } finally {
@@ -522,7 +508,7 @@ export function MandalArtApp() {
 
   function exportCsv() {
     const rows = [
-      ["id", "parent_id", "slot", "title", "description", "status", "priority", "due_date", "progress", "stickers", "image_url"],
+      ["id", "parent_id", "slot", "title", "description", "status", "priority", "due_date", "progress", "image_url"],
       ...goals.map((goal) => [
         goal.id,
         goal.parentId ?? "",
@@ -533,12 +519,11 @@ export function MandalArtApp() {
         priorityLabels[goal.priority],
         goal.dueDate ?? "",
         progressOf(goals, goal.id),
-        goal.stickers.map((sticker) => sticker.name).join("; "),
         goal.imageUrl ?? ""
       ])
     ];
     const csv = rows.map((row) => row.map(escapeCsvCell).join(",")).join("\n");
-    const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
+    const blob = new Blob([`﻿${csv}`], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     downloadFile(`madalart-${safeFileName(currentGoal.title) || "board"}.csv`, url);
     URL.revokeObjectURL(url);
@@ -560,77 +545,6 @@ export function MandalArtApp() {
     } finally {
       setIsExportingPng(false);
     }
-  }
-
-  function beginStickerGesture(
-    event: ReactPointerEvent<HTMLElement>,
-    goal: Goal,
-    sticker: GoalSticker,
-    mode: "move" | "resize" | "rotate"
-  ) {
-    event.preventDefault();
-    event.stopPropagation();
-    const contentSurface = contentSurfaceRef.current;
-    if (!contentSurface) return;
-
-    const rect = contentSurface.getBoundingClientRect();
-    const centerX = rect.left + (sticker.x / 100) * rect.width;
-    const centerY = rect.top + (sticker.y / 100) * rect.height;
-
-    setSelectedGoalId(goal.id);
-    setSelectedStickerId(sticker.id);
-    event.currentTarget.setPointerCapture(event.pointerId);
-    dragStateRef.current = {
-      goalId: goal.id,
-      stickerId: sticker.id,
-      mode,
-      rect,
-      startX: event.clientX,
-      startY: event.clientY,
-      startAngle: Math.atan2(event.clientY - centerY, event.clientX - centerX) * (180 / Math.PI),
-      startSticker: sticker
-    };
-  }
-
-  function moveStickerGesture(event: ReactPointerEvent<HTMLElement>) {
-    const gesture = dragStateRef.current;
-    if (!gesture) return;
-
-    const deltaX = event.clientX - gesture.startX;
-    const deltaY = event.clientY - gesture.startY;
-
-    if (gesture.mode === "rotate") {
-      const centerX = gesture.rect.left + (gesture.startSticker.x / 100) * gesture.rect.width;
-      const centerY = gesture.rect.top + (gesture.startSticker.y / 100) * gesture.rect.height;
-      const currentAngle = Math.atan2(event.clientY - centerY, event.clientX - centerX) * (180 / Math.PI);
-      const nextRotation = gesture.startSticker.rotation + currentAngle - gesture.startAngle;
-      updateSticker(gesture.goalId, gesture.stickerId, { rotation: Math.round(nextRotation) });
-      return;
-    }
-
-    if (gesture.mode === "resize") {
-      const nextSize = Math.min(36, Math.max(5, gesture.startSticker.size + (deltaX / gesture.rect.width) * 100));
-      updateSticker(gesture.goalId, gesture.stickerId, { size: Math.round(nextSize * 10) / 10 });
-      return;
-    }
-
-    const nextX = Math.min(100, Math.max(0, gesture.startSticker.x + (deltaX / gesture.rect.width) * 100));
-    const nextY = Math.min(100, Math.max(0, gesture.startSticker.y + (deltaY / gesture.rect.height) * 100));
-    updateSticker(gesture.goalId, gesture.stickerId, {
-      x: Math.round(nextX * 10) / 10,
-      y: Math.round(nextY * 10) / 10
-    });
-  }
-
-  function endStickerGesture(event: ReactPointerEvent<HTMLElement>) {
-    const gesture = dragStateRef.current;
-    if (!gesture) return;
-
-    dragStateRef.current = null;
-    event.currentTarget.releasePointerCapture(event.pointerId);
-    const goal = goals.find((item) => item.id === gesture.goalId);
-    const sticker = goal?.stickers.find((item) => item.id === gesture.stickerId);
-    if (goal && sticker) updateSticker(goal.id, sticker.id, sticker, true);
   }
 
   return (
@@ -715,77 +629,19 @@ export function MandalArtApp() {
                 onSelect={(id) => {
                   setCurrentGoalId(id);
                   setSelectedGoalId(id);
-                  setSelectedStickerId(null);
                 }}
               />
             ))}
         </div>
 
-        <button
-          className="softButton"
-          type="button"
-          onClick={() => {
-            persist(sampleGoals.map((goal) => ({ ...goal, ownerId })));
-            setCurrentGoalId("root");
-            setSelectedGoalId("root");
-            setSelectedStickerId(null);
-          }}
-        >
-          샘플 다시 넣기
+        <button className="softButton" type="button" onClick={resetBoard}>
+          <RotateCcw aria-hidden="true" size={15} />
+          초기화
         </button>
       </aside>
 
-      <div ref={contentSurfaceRef} className="contentSurface">
-        <div className={`surfaceStickerLayer ${isExportingPng ? "isExporting" : ""}`} aria-label="작업면 스티커">
-          {visibleStickers.map(({ goal, sticker }) => (
-            <button
-              key={`${goal.id}-${sticker.id}`}
-              className={`imageSticker surfaceSticker ${selectedStickerId === sticker.id ? "isActive" : ""}`}
-              type="button"
-              style={{
-                left: `${sticker.x}%`,
-                top: `${sticker.y}%`,
-                width: `${sticker.size}%`,
-                transform: `translate(-50%, -50%) rotate(${sticker.rotation}deg)`
-              }}
-              aria-label={`${sticker.name} 스티커 선택`}
-              onClick={(event) => {
-                event.stopPropagation();
-                setSelectedStickerId(sticker.id);
-              }}
-              onPointerDown={(event) => beginStickerGesture(event, goal, sticker, "move")}
-              onPointerMove={moveStickerGesture}
-              onPointerUp={endStickerGesture}
-              onPointerCancel={endStickerGesture}
-            >
-              <img src={sticker.src} alt="" />
-              {selectedStickerId === sticker.id ? (
-                <>
-                  <span
-                    className="rotateHandle"
-                    tabIndex={-1}
-                    aria-label={`${sticker.name} 회전`}
-                    onPointerDown={(event) => beginStickerGesture(event, goal, sticker, "rotate")}
-                    onPointerMove={moveStickerGesture}
-                    onPointerUp={endStickerGesture}
-                    onPointerCancel={endStickerGesture}
-                  />
-                  <span
-                    className="resizeHandle"
-                    tabIndex={-1}
-                    aria-label={`${sticker.name} 크기 조절`}
-                    onPointerDown={(event) => beginStickerGesture(event, goal, sticker, "resize")}
-                    onPointerMove={moveStickerGesture}
-                    onPointerUp={endStickerGesture}
-                    onPointerCancel={endStickerGesture}
-                  />
-                </>
-              ) : null}
-            </button>
-          ))}
-        </div>
-
-        <section className="workspace">
+      <div className="contentSurface">
+        <section className="workspace" onClick={handleWorkspaceClick}>
           <header className="hero">
             <div>
               <p className="eyebrow">오늘의 보드</p>
@@ -798,7 +654,6 @@ export function MandalArtApp() {
                     onClick={() => {
                       setCurrentGoalId(goal.id);
                       setSelectedGoalId(goal.id);
-                      setSelectedStickerId(null);
                     }}
                   >
                     {goal.title}
@@ -853,7 +708,7 @@ export function MandalArtApp() {
             return (
               <div
                 key={goal.id}
-                className={`goalCard ${isCenter ? "centerCard" : ""} ${selectedGoal.id === goal.id ? "selected" : ""} ${
+                className={`goalCard ${isCenter ? "centerCard" : ""} ${selectedGoal.id === goal.id && !isCenter ? "selected" : ""} ${
                   dragGoalId === goal.id ? "isDragging" : ""
                 } ${!isCenter && dragOverSlot === slot ? "dropTarget" : ""}`}
                 role="button"
@@ -884,18 +739,15 @@ export function MandalArtApp() {
                 }}
                 onClick={() => {
                   setSelectedGoalId(goal.id);
-                  setSelectedStickerId(null);
                 }}
                 onDoubleClick={() => {
                   setCurrentGoalId(goal.id);
                   setSelectedGoalId(goal.id);
-                  setSelectedStickerId(goal.stickers[0]?.id ?? null);
                 }}
                 onKeyDown={(event) => {
                   if (event.key === "Enter") {
                     setCurrentGoalId(goal.id);
                     setSelectedGoalId(goal.id);
-                    setSelectedStickerId(goal.stickers[0]?.id ?? null);
                   }
                 }}
               >
@@ -908,7 +760,7 @@ export function MandalArtApp() {
                       data-active={goal.status === "done"}
                       onClick={(event) => {
                         event.stopPropagation();
-                        toggleGoalDone(goal);
+                        toggleGoalDone(goal, { x: event.clientX, y: event.clientY });
                       }}
                     >
                       <Check aria-hidden="true" size={14} />
@@ -984,61 +836,6 @@ export function MandalArtApp() {
             onChange={(event) => patchGoal(selectedGoal.id, { description: event.target.value })}
           />
         </label>
-
-        <section className="decoratePanel" aria-label="이미지 스티커">
-          <div className="panelHead">
-            <div>
-              <p className="eyebrow">보드 스티커</p>
-              <h3>현재 보드에 붙이기</h3>
-            </div>
-            <button
-              type="button"
-              className="miniButton"
-              onClick={() => {
-                patchGoal(currentGoal.id, { stickers: [] });
-                setSelectedStickerId(null);
-              }}
-            >
-              <Trash2 aria-hidden="true" size={15} />
-              모두 비우기
-            </button>
-          </div>
-
-          <label className="fileButton wide">
-            <ImagePlus aria-hidden="true" size={17} />
-            {isUploading ? "업로드 중" : "이미지 파일 추가"}
-            <input type="file" accept="image/*" multiple onChange={addStickerFiles} />
-          </label>
-
-          <div className="stickerStrip" aria-label="붙인 스티커 목록">
-            {currentGoal.stickers.length ? (
-              currentGoal.stickers.map((sticker, index) => (
-                <button
-                  key={sticker.id}
-                  className={selectedSticker?.id === sticker.id ? "active" : ""}
-                  type="button"
-                  aria-label={`스티커 ${index + 1} 선택`}
-                  onClick={() => setSelectedStickerId(sticker.id)}
-                >
-                  <img src={sticker.src} alt="" />
-                </button>
-              ))
-            ) : (
-              <p>이 보드에 붙인 스티커가 없어요.</p>
-            )}
-          </div>
-
-          {selectedSticker ? (
-            <div className="stickerControls">
-              <div className="controlHead">
-                <strong>선택한 스티커</strong>
-                <button type="button" onClick={removeSelectedSticker}>
-                  선택 삭제
-                </button>
-              </div>
-            </div>
-          ) : null}
-        </section>
 
         <div className="fieldGrid">
           <label>
@@ -1135,30 +932,48 @@ function TreeNode({
   depth?: number;
   onSelect: (id: string) => void;
 }) {
+  const kids = childrenOf(goals, goal.id);
+  const [isOpen, setIsOpen] = useState(false);
+  const isDone = goal.status === "done";
+
   return (
     <>
-      <button
-        className={`treeNode ${goal.id === currentGoalId ? "active" : ""}`}
-        style={{ paddingLeft: 12 + depth * 14 }}
-        type="button"
-        onClick={() => onSelect(goal.id)}
+      <div
+        className={`treeNode ${goal.id === currentGoalId ? "active" : ""} ${isDone ? "done" : ""}`}
+        style={{ paddingLeft: 4 + depth * 14 }}
       >
-        <span>{goal.status === "done" ? <Check aria-hidden="true" size={14} /> : null}</span>
-        <strong>{goal.title}</strong>
-        <small>
-          {progressOf(goals, goal.id)}% · 하위 {childrenOf(goals, goal.id).length}개
-        </small>
-      </button>
-      {childrenOf(goals, goal.id).map((child) => (
-        <TreeNode
-          key={child.id}
-          goal={child}
-          goals={goals}
-          currentGoalId={currentGoalId}
-          depth={depth + 1}
-          onSelect={onSelect}
-        />
-      ))}
+        {kids.length ? (
+          <button
+            className={`treeToggle ${isOpen ? "open" : ""}`}
+            type="button"
+            aria-expanded={isOpen}
+            aria-label={isOpen ? `${goal.title} 하위 목표 접기` : `${goal.title} 하위 목표 펼치기`}
+            onClick={() => setIsOpen((prev) => !prev)}
+          >
+            <ChevronRight aria-hidden="true" size={13} />
+          </button>
+        ) : (
+          <span className="treeLeaf">{isDone ? <Check aria-hidden="true" size={13} /> : null}</span>
+        )}
+        <button className="treeLabel" type="button" onClick={() => onSelect(goal.id)}>
+          <strong>{goal.title}</strong>
+          <small>
+            {progressOf(goals, goal.id)}% · 하위 {kids.length}개
+          </small>
+        </button>
+      </div>
+      {isOpen
+        ? kids.map((child) => (
+            <TreeNode
+              key={child.id}
+              goal={child}
+              goals={goals}
+              currentGoalId={currentGoalId}
+              depth={depth + 1}
+              onSelect={onSelect}
+            />
+          ))
+        : null}
     </>
   );
 }

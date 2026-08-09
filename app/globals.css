@@ -48,6 +48,22 @@
 
 * {
   box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--line-strong);
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 body {
@@ -99,6 +115,9 @@ button {
 }
 
 .sidebar {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   border-right: 1px solid var(--line);
 }
 
@@ -165,7 +184,6 @@ button {
 }
 
 .inspector h2,
-.decoratePanel h3,
 .goalCard h3 {
   margin: 0;
   font-weight: 600;
@@ -287,20 +305,24 @@ button {
 
 .goalTree {
   display: grid;
+  flex: 1 1 auto;
+  min-height: 0;
+  align-content: start;
   gap: 2px;
+  margin: 0 -8px;
+  padding: 0 8px;
+  overflow-y: auto;
 }
 
 .treeNode {
   display: grid;
   width: 100%;
-  grid-template-columns: 16px 1fr;
-  column-gap: 6px;
-  border: 0;
+  grid-template-columns: 18px 1fr;
+  align-items: start;
+  column-gap: 4px;
   border-radius: 6px;
-  background: transparent;
   color: var(--muted);
-  padding: 7px 10px;
-  text-align: left;
+  padding: 2px 8px 2px 4px;
   transition: background 120ms ease, color 120ms ease;
 }
 
@@ -314,15 +336,56 @@ button {
   color: var(--ink);
 }
 
-.treeNode strong {
+.treeNode.done .treeLabel strong,
+.treeNode.done .treeLeaf {
+  color: var(--ok-ink);
+}
+
+.treeToggle {
+  display: grid;
+  width: 18px;
+  height: 30px;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 0;
+  transition: transform 150ms ease, color 120ms ease;
+}
+
+.treeToggle:hover {
+  color: var(--ink);
+}
+
+.treeToggle.open {
+  transform: rotate(90deg);
+}
+
+.treeLeaf {
+  display: grid;
+  width: 18px;
+  height: 30px;
+  place-items: center;
+}
+
+.treeLabel {
+  display: grid;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 5px 0;
+  text-align: left;
+}
+
+.treeLabel strong {
   overflow: hidden;
   font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.treeNode small {
-  grid-column: 2;
+.treeLabel small {
   color: var(--muted);
   font-family: var(--font-mono);
   font-size: 10px;
@@ -332,9 +395,7 @@ button {
 .softButton,
 .primaryButton,
 .secondaryButton,
-.miniButton,
-.imageActions button,
-.fileButton {
+.miniButton {
   display: inline-flex;
   min-height: 38px;
   align-items: center;
@@ -612,115 +673,6 @@ button {
   background: linear-gradient(180deg, transparent, var(--panel));
 }
 
-.stickerLayer {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-}
-
-.surfaceStickerLayer {
-  position: absolute;
-  inset: 0;
-  z-index: 40;
-  overflow: visible;
-  pointer-events: none;
-}
-
-.imageSticker {
-  position: absolute;
-  display: block;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-  padding: 0;
-  pointer-events: auto;
-  touch-action: none;
-}
-
-.surfaceSticker {
-  z-index: 1;
-  min-width: 42px;
-  max-width: min(260px, 36vw);
-}
-
-.surfaceSticker.isActive {
-  z-index: 2;
-}
-
-.imageSticker img {
-  display: block;
-  width: 100%;
-  height: auto;
-  max-height: min(220px, 30vh);
-  object-fit: contain;
-  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.3));
-  user-select: none;
-}
-
-.imageSticker.isActive {
-  outline: 1px dashed var(--ink);
-  outline-offset: 4px;
-}
-
-.shareFrame.isExporting .imageSticker.isActive,
-.surfaceStickerLayer.isExporting .imageSticker.isActive {
-  outline: 0;
-}
-
-.resizeHandle {
-  position: absolute;
-  right: -12px;
-  bottom: -12px;
-  width: 20px;
-  height: 20px;
-  border: 1px solid var(--line-strong);
-  border-radius: 999px;
-  background: var(--panel);
-  cursor: nwse-resize;
-  touch-action: none;
-}
-
-.resizeHandle::after {
-  content: "";
-  position: absolute;
-  inset: 5px;
-  border-radius: 999px;
-  background: var(--ink);
-}
-
-.rotateHandle {
-  position: absolute;
-  top: -32px;
-  left: 50%;
-  width: 18px;
-  height: 18px;
-  border: 1px solid var(--line-strong);
-  border-radius: 999px;
-  background: var(--panel);
-  cursor: grab;
-  transform: translateX(-50%);
-  touch-action: none;
-}
-
-.rotateHandle::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 100%;
-  width: 1px;
-  height: 13px;
-  background: var(--line-strong);
-  transform: translateX(-50%);
-}
-
-.shareFrame.isExporting .resizeHandle,
-.surfaceStickerLayer.isExporting .resizeHandle,
-.shareFrame.isExporting .rotateHandle,
-.surfaceStickerLayer.isExporting .rotateHandle {
-  display: none;
-}
-
 .cardTop,
 .cardBody,
 .cardMeta {
@@ -892,7 +844,7 @@ button {
   gap: 16px;
 }
 
-.inspector label:not(.fileButton) {
+.inspector label {
   display: grid;
   gap: 6px;
   color: var(--muted);
@@ -923,26 +875,6 @@ button {
   border-color: var(--ink);
 }
 
-.decoratePanel {
-  display: grid;
-  gap: 12px;
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel);
-}
-
-.panelHead {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.panelHead h3 {
-  font-size: 16px;
-}
-
 .miniButton {
   min-height: 30px;
   padding: 0 10px;
@@ -956,111 +888,12 @@ button {
   border-color: var(--line-strong);
 }
 
-.fileButton.wide {
-  width: 100%;
-}
-
-.stickerStrip {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.stickerStrip p {
-  grid-column: 1 / -1;
-  margin: 0;
-  border: 1px dashed var(--line-strong);
-  border-radius: 6px;
-  background: transparent;
-  color: var(--muted);
-  padding: 12px;
-  font-size: 13px;
-}
-
-.stickerStrip button {
-  display: grid;
-  place-items: center;
-  aspect-ratio: 1;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--bg);
-  color: var(--ink);
-  padding: 6px;
-}
-
-.stickerStrip button.active {
-  border-color: var(--ink);
-}
-
-.stickerStrip img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.stickerControls {
-  display: grid;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--bg);
-  padding: 10px 12px;
-}
-
-.controlHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.controlHead strong {
-  overflow: hidden;
-  color: var(--ink);
-  font-size: 13px;
-  font-weight: 500;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.controlHead button {
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--danger);
-  padding: 6px 8px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.controlHead button:hover {
-  background: var(--panel-soft);
-}
-
-.imageActions,
 .fieldGrid,
 .actionRow,
 .exportActions {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
-}
-
-.imageActions button,
-.fileButton {
-  border: 1px solid var(--line);
-  background: transparent;
-  color: var(--ink);
-  cursor: pointer;
-}
-
-.imageActions button:hover,
-.fileButton:hover {
-  border-color: var(--line-strong);
-  background: var(--panel-soft);
-}
-
-.fileButton input {
-  display: none;
 }
 
 .primaryButton {
@@ -1218,16 +1051,6 @@ button {
 
   .inspector.isOpen .panelChevron {
     transform: rotate(180deg);
-  }
-}
-
-@media (max-width: 900px) {
-  .surfaceStickerLayer {
-    display: none;
-  }
-
-  .stickerControls {
-    display: none;
   }
 }
 

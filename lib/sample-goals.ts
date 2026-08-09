@@ -9,11 +9,10 @@ export const sampleGoals: Goal[] = [
     parentId: null,
     slot: 0,
     title: "내가 좋아하는 하루",
-    description: "목표를 스티커와 사진으로 꾸미면서 매일 보고 싶은 만다라트를 만든다.",
+    description: "매일 보면서 실행하고 싶은 만다라트를 만든다.",
     status: "doing",
     priority: "high",
     dueDate: "2026-06-30",
-    stickers: [],
     imageUrl: null,
     createdAt: now,
     updatedAt: now
@@ -28,7 +27,6 @@ export const sampleGoals: Goal[] = [
     status: "done",
     priority: "medium",
     dueDate: null,
-    stickers: [],
     imageUrl: null,
     createdAt: now,
     updatedAt: now
@@ -43,7 +41,6 @@ export const sampleGoals: Goal[] = [
     status: "doing",
     priority: "high",
     dueDate: "2026-05-10",
-    stickers: [],
     imageUrl: null,
     createdAt: now,
     updatedAt: now
@@ -58,7 +55,6 @@ export const sampleGoals: Goal[] = [
     status: "todo",
     priority: "medium",
     dueDate: null,
-    stickers: [],
     imageUrl: null,
     createdAt: now,
     updatedAt: now
@@ -73,22 +69,20 @@ export const sampleGoals: Goal[] = [
     status: "todo",
     priority: "high",
     dueDate: null,
-    stickers: [],
     imageUrl: null,
     createdAt: now,
     updatedAt: now
   },
   {
-    id: "decorate",
+    id: "visualize",
     ownerId: null,
     parentId: "root",
     slot: 4,
-    title: "보드 꾸미기",
-    description: "마음에 드는 이미지와 스티커로 목표를 기억하기 쉽게 만든다.",
+    title: "진행 상황 보기",
+    description: "보드를 열어 진행률을 확인하고 다음 할 일을 고른다.",
     status: "doing",
     priority: "low",
     dueDate: null,
-    stickers: [],
     imageUrl: null,
     createdAt: now,
     updatedAt: now
@@ -103,7 +97,6 @@ export const sampleGoals: Goal[] = [
     status: "todo",
     priority: "medium",
     dueDate: null,
-    stickers: [],
     imageUrl: null,
     createdAt: now,
     updatedAt: now
@@ -118,7 +111,6 @@ export const sampleGoals: Goal[] = [
     status: "todo",
     priority: "medium",
     dueDate: null,
-    stickers: [],
     imageUrl: null,
     createdAt: now,
     updatedAt: now
@@ -133,7 +125,6 @@ export const sampleGoals: Goal[] = [
     status: "done",
     priority: "low",
     dueDate: null,
-    stickers: [],
     imageUrl: null,
     createdAt: now,
     updatedAt: now
@@ -148,7 +139,6 @@ export const sampleGoals: Goal[] = [
     status: "done",
     priority: "high",
     dueDate: null,
-    stickers: [],
     imageUrl: null,
     createdAt: now,
     updatedAt: now

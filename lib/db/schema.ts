@@ -1,5 +1,4 @@
-import { boolean, integer, jsonb, pgTable, primaryKey, text, timestamp } from "drizzle-orm/pg-core";
-import type { GoalSticker } from "@/lib/types";
+import { boolean, integer, pgTable, primaryKey, text, timestamp } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -65,7 +64,6 @@ export const goals = pgTable(
     status: text("status").notNull().default("todo"),
     priority: text("priority").notNull().default("medium"),
     dueDate: text("due_date"),
-    stickers: jsonb("stickers").$type<GoalSticker[]>().notNull().default([]),
     imageUrl: text("image_url"),
     createdAt: text("created_at").notNull(),
     updatedAt: text("updated_at").notNull()

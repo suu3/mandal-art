@@ -1,16 +1,6 @@
 export type GoalStatus = "todo" | "doing" | "done";
 export type GoalPriority = "low" | "medium" | "high";
 
-export type GoalSticker = {
-  id: string;
-  src: string;
-  name: string;
-  x: number;
-  y: number;
-  size: number;
-  rotation: number;
-};
-
 export type Goal = {
   id: string;
   ownerId: string | null;
@@ -21,7 +11,6 @@ export type Goal = {
   status: GoalStatus;
   priority: GoalPriority;
   dueDate: string | null;
-  stickers: GoalSticker[];
   imageUrl: string | null;
   createdAt: string;
   updatedAt: string;
