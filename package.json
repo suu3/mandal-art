@@ -1,35 +1,18 @@
 {
-  "name": "madalart",
-  "version": "0.1.0",
-  "private": true,
+  "name": "mandalart", "version": "0.2.0", "private": true, "type": "module",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "icons": "node scripts/generate-icons.mjs",
-    "typecheck": "tsc --noEmit"
+    "dev": "vite --host 127.0.0.1 --port 5173", "build": "vite build", "preview": "vite preview --host 127.0.0.1 --port 4173",
+    "typecheck": "tsc --noEmit", "test": "vitest run", "db:migrate": "wrangler d1 migrations apply mandalart --local",
+    "db:migrate:remote": "wrangler d1 migrations apply mandalart --remote", "deploy": "npm run build && wrangler deploy",
+    "deploy:check": "npm run build && wrangler deploy --dry-run", "icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {
-    "@hookform/resolvers": "^5.7.1",
-    "@neondatabase/serverless": "^1.1.0",
-    "better-auth": "^1.6.26",
-    "drizzle-orm": "^0.45.2",
-    "html-to-image": "^1.11.13",
-    "lucide-react": "^0.468.0",
-    "next": "^15.1.8",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-hook-form": "^7.85.0",
-    "zod": "^4.4.3"
+    "better-auth": "1.6.26", "drizzle-orm": "^0.45.2", "hono": "^4.12.0", "html-to-image": "^1.11.13",
+    "lucide-react": "^0.468.0", "react": "^19.0.0", "react-dom": "^19.0.0", "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/node": "^22.10.5",
-    "@types/react": "^19.0.4",
-    "@types/react-dom": "^19.0.2",
-    "eslint": "^9.17.0",
-    "eslint-config-next": "^15.1.8",
-    "sharp": "^0.35.3",
-    "typescript": "^5.7.2"
+    "@cloudflare/vite-plugin": "^1.64.0", "@cloudflare/workers-types": "latest", "@types/node": "^22.10.5",
+    "@types/react": "^19.0.4", "@types/react-dom": "^19.0.2", "@vitejs/plugin-react": "^6.0.0",
+    "miniflare": "latest", "sharp": "^0.35.3", "typescript": "^5.7.2", "vite": "^8.3.4", "vitest": "^4.1.0", "wrangler": "^4.151.1"
   }
 }
