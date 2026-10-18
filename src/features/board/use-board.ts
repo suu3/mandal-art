@@ -28,14 +28,12 @@ export function useBoard(owner: string | null, pending: boolean) {
   const queue = useRef<SaveQueue | null>(null);
   const latest = useRef<Goal[]>([]);
   const revision = useRef(0);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (pending) return;
     let active = true;
     const controller = new AbortController();
     queue.current?.dispose();
     queue.current = null;
-    if (timer.current) clearTimeout(timer.current);
     let storage: Storage;
     try {
       storage = window.localStorage;
@@ -135,7 +133,6 @@ export function useBoard(owner: string | null, pending: boolean) {
       controller.abort();
       queue.current?.dispose();
       queue.current = null;
-      if (timer.current) clearTimeout(timer.current);
     };
   }, [owner, pending, reload]);
 
@@ -170,11 +167,9 @@ export function useBoard(owner: string | null, pending: boolean) {
         : "기기 저장에 실패했습니다. JSON으로 백업해주세요.",
     }));
     if (owner && queue.current) {
-      if (timer.current) clearTimeout(timer.current);
-      timer.current = setTimeout(
-        () => queue.current?.save(latest.current),
-        650,
-      );
+      // Inputs commit on blur. Enqueue immediately so an older response cannot
+      // acknowledge a newer edit that is still outside the queue.
+      queue.current.save(goals);
     } else if (owner)
       setState((s) => ({
         ...s,

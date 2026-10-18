@@ -12,15 +12,10 @@ export function download(
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+export const serializeBackup = (goals: Goal[]) =>
+  JSON.stringify({ version: 3, exportedAt: new Date().toISOString(), goals });
 export const exportJson = (goals: Goal[]) =>
-  download(
-    "mandalart-backup.json",
-    JSON.stringify(
-      { version: 3, exportedAt: new Date().toISOString(), goals },
-      null,
-      2,
-    ),
-  );
+  download("mandalart-backup.json", serializeBackup(goals));
 export function exportCsv(goals: Goal[]) {
   const cell = (v: unknown) => {
     let text = String(v ?? "");
