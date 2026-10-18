@@ -1,12 +1,24 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "mandalart",
+  "workers_dev": true,
+  "preview_urls": false,
   "main": "server/index.ts",
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
-  "assets": { "directory": "./dist/client", "binding": "ASSETS", "not_found_handling": "single-page-application", "run_worker_first": ["/api/*"] },
-  "d1_databases": [{ "binding": "DB", "database_name": "mandalart", "database_id": "5b30f6de-e358-479f-81f9-79a25f6dd6f4", "migrations_dir": "migrations" }],
-  "observability": { "enabled": false }
+  "assets": {
+    "directory": "./dist/client",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"],
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "mandalart",
+      "database_id": "5b30f6de-e358-479f-81f9-79a25f6dd6f4",
+      "migrations_dir": "migrations",
+    },
+  ],
+  "observability": { "enabled": false },
 }
-
-

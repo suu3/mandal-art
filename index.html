@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ko" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <meta name="theme-color" content="#f6f5ef" />
+    <meta
+      name="description"
+      content="큰 목표를 여덟 가지 작은 실천으로. 나다운 성장을 위한 만다라트 플래너."
+    />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <title>만다라트 — 작은 실천, 나다운 성장</title>
+    <script>
+      try {
+        document.documentElement.dataset.theme =
+          localStorage.getItem("madalart-theme") === "dark" ? "dark" : "light";
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
