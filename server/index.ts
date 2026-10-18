@@ -1,8 +1,9 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { createAuth, authReady, type Env } from "./auth";
+import { createAuth, authReady, providerAvailability, type Env } from "./auth";
 import { readBoard, replaceBoard } from "./boards";
-import { MAX_BYTES, validateGoals } from "../src/domain/goals";
+import { MAX_BYTES, validateGoals } from "../src/entities/board/model/goals";
+import boardRoutes from "./board-routes";
 
 const app = new Hono<{ Bindings: Env; Variables: { owner: string } }>();
 app.use("/api/*", async (c, next) => {
@@ -17,7 +18,8 @@ app.use("/api/*", async (c, next) => {
   }
   await next();
 });
-app.get("/api/config", (c) => c.json({ githubLogin: authReady(c.env) }));
+app.route("/api/boards", boardRoutes);
+app.get("/api/config", (c) => c.json(providerAvailability(c.env)));
 app.on(["GET", "POST"], "/api/auth/*", (c) => {
   if (!authReady(c.env))
     return c.req.path === "/api/auth/get-session"

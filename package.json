@@ -14,9 +14,12 @@
     "deploy": "npm run build && wrangler deploy",
     "deploy:check": "npm run build && wrangler deploy --dry-run",
     "icons": "node scripts/generate-icons.mjs",
-    "format": "prettier --write src server tests *.ts *.json *.jsonc index.html README.md"
+    "format": "prettier --write src server tests *.ts *.json *.jsonc index.html README.md",
+    "check:boundaries": "node scripts/check-boundaries.mjs",
+    "check": "npm run check:boundaries && npm test && npm run typecheck && npm run build"
   },
   "dependencies": {
+    "@tanstack/react-query": "5.104.4",
     "better-auth": "1.6.26",
     "drizzle-orm": "0.45.2",
     "hono": "4.13.13",
@@ -24,6 +27,7 @@
     "lucide-react": "0.468.0",
     "react": "19.2.5",
     "react-dom": "19.2.5",
+    "react-router-dom": "7.18.4",
     "zod": "4.4.3"
   },
   "devDependencies": {

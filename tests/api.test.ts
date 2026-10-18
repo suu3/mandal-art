@@ -3,7 +3,7 @@ import { Miniflare, convertV4MiniflareOptions } from "miniflare";
 import { readFileSync } from "node:fs";
 import { createHmac } from "node:crypto";
 import app from "../server/index";
-import { newRoot } from "../src/domain/goals";
+import { newRoot } from "../src/entities/board/model/goals";
 import type { Env } from "../server/auth";
 
 let mf: Miniflare;
@@ -51,6 +51,12 @@ beforeAll(async () => {
       new URL("../migrations/0001_initial.sql", import.meta.url),
       "utf8",
     ).replace(/\n/g, " "),
+  );
+  await db.exec(
+    readFileSync("migrations/0002_multiple_boards.sql", "utf8").replace(
+      /\n/g,
+      " ",
+    ),
   );
   for (const id of ["alice", "bob"]) {
     await db
@@ -163,7 +169,10 @@ describe("real D1 board API and signed sessions", () => {
     const response = await app.fetch(new Request(`${origin}/api/config`), {
       DB: env.DB,
     } as Env);
-    expect(await response.json()).toEqual({ githubLogin: false });
+    expect(await response.json()).toEqual({
+      githubLogin: false,
+      googleLogin: false,
+    });
     expect((await request("/api/unknown")).status).toBe(404);
   });
 });
