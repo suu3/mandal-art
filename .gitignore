@@ -6,3 +6,8 @@ dist
 .env*.local
 *.tsbuildinfo
 .DS_Store
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+.wrangler/
+.vite/
