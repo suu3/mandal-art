@@ -34,6 +34,9 @@ export function SignIn() {
       {data && !data.googleLogin && (
         <small className="muted">Google 로그인은 연결 준비 중입니다.</small>
       )}
+      <small>
+        <a href="/privacy.html">개인정보처리방침</a>
+      </small>
     </div>
   );
 }
