@@ -1,5 +1,5 @@
 import { useBoardGoals } from "../model/useBoardGoals";
-import { useToggleGoal } from "../../../features/toggle-goal/model/useToggleGoal";
+import { useToggleGoal } from "../../../features/toggle-goal";
 import { childrenOf } from "../../../entities/board";
 import { useIsMutating } from "@tanstack/react-query";
 export function BoardGoals({

@@ -3,9 +3,9 @@ import { useIsMutating } from "@tanstack/react-query";
 import { ChevronRight, Download, FileUp, RotateCcw } from "lucide-react";
 import { useMandalartEditor } from "../model/useMandalartEditor";
 import { MandalartView } from "./MandalartView";
-import { useSaveBoard } from "../../../features/edit-goal/model/useSaveBoard";
-import { useToggleGoal } from "../../../features/toggle-goal/model/useToggleGoal";
-import { GoalEditor } from "../../../features/edit-goal/ui/GoalEditor";
+import { useSaveBoard } from "../../../features/edit-goal";
+import { useToggleGoal } from "../../../features/toggle-goal";
+import { GoalEditor } from "../../../features/edit-goal";
 import {
   childrenOf,
   newRoot,

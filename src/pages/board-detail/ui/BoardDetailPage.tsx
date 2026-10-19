@@ -3,11 +3,11 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useSession } from "../../../entities/session";
 import { useBoardDetail } from "../model/useBoardDetail";
-import { MandalartEditor } from "../../../widgets/mandalart-editor/ui/MandalartEditor";
-import { BoardProgress } from "../../../widgets/board-progress/ui/BoardProgress";
-import { BoardGoals } from "../../../widgets/board-goals/ui/BoardGoals";
-import { DeleteBoard } from "../../../features/delete-board/ui/DeleteBoard";
-import { SignIn } from "../../../features/sign-in/ui/SignIn";
+import { MandalartEditor } from "../../../widgets/mandalart-editor";
+import { BoardProgress } from "../../../widgets/board-progress";
+import { BoardGoals } from "../../../widgets/board-goals";
+import { DeleteBoard } from "../../../features/delete-board";
+import { SignIn } from "../../../features/sign-in";
 import {
   download,
   LocalBoardError,

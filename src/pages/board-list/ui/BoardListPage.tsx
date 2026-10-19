@@ -3,8 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { ArrowUpRight } from "lucide-react";
 import { boardListOptions } from "../../../entities/board";
 import { useSession } from "../../../entities/session";
-import { CreateBoard } from "../../../features/create-board/ui/CreateBoard";
-import { SignIn } from "../../../features/sign-in/ui/SignIn";
+import { CreateBoard } from "../../../features/create-board";
+import { SignIn } from "../../../features/sign-in";
 export function BoardListPage() {
   const { user } = useSession(),
     navigate = useNavigate();

@@ -10,8 +10,8 @@ import {
 import { LayoutGrid, Moon, Sun, LogOut, Menu, X } from "lucide-react";
 import { SessionProvider, useSession } from "../entities/session";
 import { QueryProvider } from "./providers/QueryProvider";
-import { BoardListPage } from "../pages/board-list/ui/BoardListPage";
-import { BoardDetailPage } from "../pages/board-detail/ui/BoardDetailPage";
+import { BoardListPage } from "../pages/board-list";
+import { BoardDetailPage } from "../pages/board-detail";
 import { authClient } from "../entities/session";
 export function App() {
   return (
