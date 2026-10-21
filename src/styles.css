@@ -13,6 +13,9 @@
     "Segoe UI",
     sans-serif;
   font-synthesis: none;
+  --text-label: 0.875rem;
+  --text-navigation: 0.9375rem;
+  --text-section-title: 1rem;
   --bg: #fafaf8;
   --paper: #fff;
   --sidebar: #f2f3ef;
@@ -155,7 +158,7 @@ p {
   align-items: center;
   gap: 10px;
   margin: 40px 0 28px;
-  font-size: 13px;
+  font-size: var(--text-navigation);
   font-weight: 550;
   overflow: hidden;
 }
@@ -165,7 +168,7 @@ p {
 }
 .workspace-label small {
   display: block;
-  font-size: 11px;
+  font-size: var(--text-label);
   font-weight: 400;
   color: var(--muted);
   margin-top: 5px;
@@ -188,7 +191,7 @@ p {
   gap: 9px;
   padding: 12px;
   border-radius: 5px;
-  font-size: 13px;
+  font-size: var(--text-navigation);
   color: var(--subtle);
   margin: 4px 0;
 }
@@ -225,7 +228,7 @@ p {
   justify-content: space-between;
   padding: 0 40px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-label);
 }
 .topbar > div {
   display: flex;
@@ -260,7 +263,7 @@ p {
   border: 1px solid var(--line);
   border-radius: 5px;
   padding: 0 16px;
-  font-size: 12px;
+  font-size: var(--text-label);
   font-weight: 550;
   background: var(--paper);
   white-space: nowrap;
@@ -291,7 +294,7 @@ p {
 }
 .page-kicker {
   display: block;
-  font-size: 12px;
+  font-size: var(--text-label);
   color: var(--muted);
   margin-bottom: 11px;
 }
@@ -302,7 +305,7 @@ h1 {
   line-height: 1.4;
 }
 .page-heading p {
-  font-size: 13px;
+  font-size: var(--text-navigation);
   color: var(--subtle);
   margin-top: 12px;
   line-height: 1.7;
@@ -352,7 +355,7 @@ h1 {
   min-width: 0;
 }
 .board-card-meta h2 {
-  font-size: 16px;
+  font-size: var(--text-section-title);
   font-weight: 600;
   letter-spacing: -0.4px;
   line-height: 1.5;
@@ -368,7 +371,7 @@ h1 {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: var(--text-label);
   color: var(--subtle);
   margin-top: 32px;
   padding: 10px 0;
@@ -400,7 +403,7 @@ h1 {
 .sign-in-options .button {
   width: 250px;
   min-height: 46px;
-  font-size: 13px;
+  font-size: var(--text-label);
 }
 .sign-in-options small {
   font-size: 11px;
@@ -781,7 +784,7 @@ h1 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 12px;
+  font-size: var(--text-label);
   color: var(--subtle);
   margin-bottom: 16px;
 }
@@ -827,7 +830,7 @@ h1 {
   align-items: center;
 }
 .widget-heading h2 {
-  font-size: 13px;
+  font-size: var(--text-section-title);
   font-weight: 600;
 }
 .widget-heading > span {
@@ -896,7 +899,7 @@ h1 {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  font-size: 12px;
+  font-size: var(--text-label);
   min-height: 40px;
   padding: 0;
   color: var(--subtle);
@@ -1209,7 +1212,7 @@ h1 {
     font-size: 30px;
   }
   .page-heading p {
-    font-size: 12px;
+    font-size: var(--text-navigation);
   }
   .detail-heading h1 {
     font-size: 27px;
@@ -1235,7 +1238,7 @@ h1 {
     height: 38px;
   }
   .board-card-meta h2 {
-    font-size: 14px;
+    font-size: var(--text-section-title);
   }
   .board-list-card > svg {
     width: 17px;
@@ -1254,7 +1257,7 @@ h1 {
     height: 60px;
   }
   .topbar .button {
-    font-size: 11px;
+    font-size: var(--text-label);
     padding: 0 11px;
     min-height: 40px;
   }
@@ -1269,7 +1272,7 @@ h1 {
     font-size: 28px;
   }
   .page-heading p {
-    font-size: 12px;
+    font-size: var(--text-navigation);
   }
   .page-heading .create-board {
     margin-top: 20px;
@@ -1281,7 +1284,7 @@ h1 {
     min-height: 105px;
   }
   .board-card-meta h2 {
-    font-size: 15px;
+    font-size: var(--text-section-title);
   }
   .board-list-preview {
     width: 45px;
@@ -1309,7 +1312,7 @@ h1 {
     font-size: 23px;
   }
   .page-kicker {
-    font-size: 11px;
+    font-size: var(--text-label);
   }
   .view-tabs {
     margin-top: 18px;
