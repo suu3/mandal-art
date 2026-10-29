@@ -4,7 +4,7 @@
 
 **서비스:** https://mandalart.mandalart.workers.dev
 
-React/Vite 프론트와 Hono API를 하나의 Cloudflare Worker로 배포하고 D1에 저장한다. 별도 서버나 keep-alive cron을 운영하지 않는다. 사용자가 선택한 무료 Cloudflare 구성을 유지하면서 FSD와 TanStack Query 데이터 흐름을 적용했다. Next.js와 서버 prefetch/hydration은 현재 범위에 포함하지 않는다.
+React/Vite 프론트와 Hono API를 하나의 Cloudflare Worker로 배포하고 D1에 저장한다. 별도 서버나 keep-alive cron을 운영하지 않는다. FSD로 책임을 나누고 TanStack Query로 보드 데이터를 공유한다.
 
 ## 데이터 흐름과 구조
 
@@ -23,6 +23,7 @@ React/Vite 프론트와 Hono API를 하나의 Cloudflare Worker로 배포하고 
 | `server/`       | Hono·better-auth·D1·소유권 검증        |
 | `migrations/`   | 데이터 보존 SQL migration              |
 
+설계 결정과 데이터 흐름은 [아키텍처](docs/architecture.md), 검증 범위는 [검증과 제약사항](docs/verification.md)을 참조한다. 폰트는 Pretendard Variable을 직접 제공하며 OFL 라이선스는 `public/fonts/OFL.txt`에 있다.
 
 ## 개발과 검증
 
@@ -54,7 +55,6 @@ GitHub 사용 시 공급자 이름을 바꿔 등록한다. `/api/config`의 `goo
 
 ## 배포
 
-
 ```sh
 npx wrangler login
 npx wrangler d1 export mandalart --remote --output=.wrangler/pre-migration-backup.sql
@@ -81,4 +81,4 @@ Secrets 등록 후 새 기본 브랜치(`main`) push를 하거나 Actions → Ch
 - PWA는 공개 정적 자산만 캐시하고 인증·목표 API 응답은 캐시하지 않는다.
 - 과거 Neon/Supabase 계정을 OAuth 계정에 자동 연결하지 않는다. `neon/`, `supabase/`는 참고용이며 현재 런타임에서 사용하지 않는다.
 
-DB 백업에는 개인정보가 포함되므로 Git에 커밋하지 않는다. 배포 롤백은 Cloudflare Deployments를 사용하고 DB 복구는 사전 백업으로 별도 처리한다. 이전 비공개 이력은 별도 백업으로 보관한다.
+DB 백업에는 개인정보가 포함되므로 Git에 커밋하지 않는다. 배포 롤백은 Cloudflare Deployments를 사용하고 DB 복구는 사전 백업으로 별도 처리한다.
