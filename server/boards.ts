@@ -1,17 +1,19 @@
 import { newRoot, type Goal } from "../src/entities/board/model/goals";
 import { getOwnedBoard } from "./board-routes";
+import { insertBoardWithinLimits } from "./board-creation";
 // Compatibility endpoint for clients running the previous single-board bundle.
 // It writes the migrated record so a stale tab cannot fork the user's data.
 export async function readBoard(db: D1Database, owner: string) {
   const id = `legacy-${owner}`,
     now = new Date().toISOString(),
     goals = [newRoot()];
-  await db
-    .prepare(
-      "INSERT OR IGNORE INTO boards(id,owner_id,title,revision,snapshot,created_at,updated_at) VALUES(?,?,?,0,?,?,?)",
-    )
-    .bind(id, owner, goals[0].title, JSON.stringify(goals), now, now)
-    .run();
+  const existing = await getOwnedBoard(db, owner, id);
+  if (existing)
+    return {
+      revision: existing.revision,
+      goals: JSON.parse(existing.snapshot) as Goal[],
+    };
+  await insertBoardWithinLimits(db, owner, id, goals[0].title, goals, now);
   const row = await getOwnedBoard(db, owner, id);
   if (!row) throw new Error("This board was deleted. Reload the app.");
   return { revision: row.revision, goals: JSON.parse(row.snapshot) as Goal[] };

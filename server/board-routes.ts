@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { z } from "zod";
 import { createAuth, authReady, type Env } from "./auth";
+import { BoardCreationError, insertBoardWithinLimits } from "./board-creation";
 import {
   MAX_BYTES,
   newRoot,
@@ -67,18 +68,19 @@ routes.post("/", async (c) => {
   const now = new Date().toISOString(),
     id = crypto.randomUUID();
   const goals = [{ ...newRoot(), title: parsed.data.title }];
-  await c.env.DB.prepare(
-    "INSERT INTO boards(id,owner_id,title,revision,snapshot,created_at,updated_at) VALUES(?,?,?,0,?,?,?)",
-  )
-    .bind(
-      id,
-      c.get("owner"),
-      parsed.data.title,
-      JSON.stringify(goals),
-      now,
-      now,
-    )
-    .run();
+  const inserted = await insertBoardWithinLimits(
+    c.env.DB,
+    c.get("owner"),
+    id,
+    parsed.data.title,
+    goals,
+    now,
+  );
+  if (!inserted)
+    throw new BoardCreationError(
+      "보드를 만들지 못했습니다. 다시 시도해주세요.",
+      409,
+    );
   return c.json(
     {
       id,

@@ -54,6 +54,7 @@ GitHub 사용 시 공급자 이름을 바꿔 등록한다. `/api/config`의 `goo
 
 ## 배포
 
+
 ```sh
 npx wrangler login
 npx wrangler d1 export mandalart --remote --output=.wrangler/pre-migration-backup.sql
@@ -61,11 +62,11 @@ npm run db:migrate:remote
 npm run deploy
 ```
 
-기존 `wrangler.jsonc`는 생성된 mandalart D1을 참조한다. 다른 계정에서는 `npx wrangler d1 create mandalart` 결과의 ID로 바꾼다. Cloudflare 이메일 인증이 필요하다. 유료 플랜·R2·KV를 활성화하는 스크립트는 없다. GitHub Actions는 모든 push와 PR에서 검증하고, `master` push에서는 검증 성공 후 Worker와 정적 자산을 자동 배포한다. PR과 다른 브랜치에서는 배포하지 않는다. 배포는 동시에 실행되지 않으며 진행 중인 배포를 새 push로 취소하지 않는다.
+기존 `wrangler.jsonc`는 생성된 mandalart D1을 참조한다. 다른 계정에서는 `npx wrangler d1 create mandalart` 결과의 ID로 바꾼다. Cloudflare 이메일 인증이 필요하다. 유료 플랜·R2·KV를 활성화하는 스크립트는 없다. GitHub Actions는 모든 push와 PR에서 검증하고, 기본 브랜치(`main`) push에서는 검증 성공 후 Worker와 정적 자산을 자동 배포한다. PR과 기본 브랜치 이외의 브랜치에서는 배포하지 않는다. 배포는 동시에 실행되지 않으며 진행 중인 배포를 새 push로 취소하지 않는다.
 
 최초 연결 시 저장소 Settings → Secrets and variables → Actions → Repository secrets에 `CLOUDFLARE_API_TOKEN`과 `CLOUDFLARE_ACCOUNT_ID`를 등록한다. API 토큰은 대상 Cloudflare 계정에 한정해 Workers Scripts 편집 및 해당 D1 바인딩에 필요한 D1 읽기 권한을 부여한다. 토큰과 OAuth 비밀값은 Git에 넣지 않는다. 기존 OAuth 값은 Cloudflare Worker secrets에 유지한다.
 
-Secrets 등록 후 새 `master` push를 하거나 Actions → Check and deploy → Run workflow에서 `master`를 선택한다. 자격 증명이 없으면 배포 작업은 누락된 secret 이름만 표시하고 실패한다. 자동 배포는 원격 D1 migration을 실행하지 않으므로 스키마 변경 시 위 백업·원격 migration 절차를 별도로 수행한다.
+Secrets 등록 후 새 기본 브랜치(`main`) push를 하거나 Actions → Check and deploy → Run workflow에서 기본 브랜치(`main`)를 선택한다. 자격 증명이 없으면 배포 작업은 누락된 secret 이름만 표시하고 실패한다. 자동 배포는 원격 D1 migration을 실행하지 않으므로 스키마 변경 시 위 백업·원격 migration 절차를 별도로 수행한다.
 
 무료 플랜의 제공량은 무제한이 아니다. 현재 조건은 [Workers 공식 요금](https://developers.cloudflare.com/workers/platform/pricing/)과 [D1 공식 요금](https://developers.cloudflare.com/d1/platform/pricing/)을 확인한다. 현재 서비스는 무료 `workers.dev` 주소를 사용한다. 보유 도메인은 Workers Settings → Domains & Routes → Custom Domain으로 연결하고 서비스 origin과 OAuth 콜백을 함께 변경한다. 도메인 구입·갱신 비용은 별도다.
 
@@ -75,8 +76,9 @@ Secrets 등록 후 새 `master` push를 하거나 Actions → Check and deploy �
 - 서버는 모든 보드 요청에서 세션과 소유권을 확인한다. 목록·생성·삭제·수정은 로그인 계정에만 적용된다. 삭제는 soft delete다. 수정은 revision 불일치 시 409를 반환한다.
 - 기기 보드는 브라우저 저장소에 남고 클라우드로 자동 업로드하지 않는다. JSON 백업과 가져오기로 직접 옮긴다. 손상된 기기 데이터는 원본 다운로드·별도 복사본 생성 후 복구한다.
 - 과거 `madalart-next-goals` 값은 자동으로 덮어쓰지 않는다. 화면에서 원본을 내려받은 뒤 가져온다. 이미지가 든 구형 백업은 별도 이전이 필요하다.
+- 계정당 활성 보드 최대 50개, 최근 60초 동안 생성 최대 5개(삭제한 보드 포함). 구버전 호환 API에도 동일하게 적용한다. 기존 보드는 제한 도입으로 삭제하지 않는다.
 - 목표 1,000개, 제목 120자, 설명 4,000자, 요청/백업 256KiB 제한. 이미지 업로드는 지원하지 않는다.
 - PWA는 공개 정적 자산만 캐시하고 인증·목표 API 응답은 캐시하지 않는다.
 - 과거 Neon/Supabase 계정을 OAuth 계정에 자동 연결하지 않는다. `neon/`, `supabase/`는 참고용이며 현재 런타임에서 사용하지 않는다.
 
-DB 백업에는 개인정보가 포함되므로 Git에 커밋하지 않는다. 배포 롤백은 Cloudflare Deployments를 사용하고 DB 복구는 사전 백업으로 별도 처리한다. 과거 Next.js/Neon 구현은 Git 커밋 `8e75018`에 남아 있다.
+DB 백업에는 개인정보가 포함되므로 Git에 커밋하지 않는다. 배포 롤백은 Cloudflare Deployments를 사용하고 DB 복구는 사전 백업으로 별도 처리한다. 이전 비공개 이력은 별도 백업으로 보관한다.

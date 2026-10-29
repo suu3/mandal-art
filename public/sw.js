@@ -1,6 +1,7 @@
-const CACHE = "mandalart-public-v4";
+const CACHE = "mandalart-public-v5";
 const SHELL = [
   "/",
+  "/theme.js",
   "/icon.svg",
   "/manifest.webmanifest",
   "/icon-192.png",

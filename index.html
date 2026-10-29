@@ -19,12 +19,7 @@
       crossorigin
     />
     <title>만다라트 — 목표 보드</title>
-    <script>
-      try {
-        document.documentElement.dataset.theme =
-          localStorage.getItem("madalart-theme") === "dark" ? "dark" : "light";
-      } catch (e) {}
-    </script>
+    <script src="/theme.js"></script>
   </head>
   <body>
     <div id="root"></div>

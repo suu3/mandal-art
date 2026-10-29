@@ -4,6 +4,7 @@ import { createAuth, authReady, providerAvailability, type Env } from "./auth";
 import { readBoard, replaceBoard } from "./boards";
 import { MAX_BYTES, validateGoals } from "../src/entities/board/model/goals";
 import boardRoutes from "./board-routes";
+import { BoardCreationError } from "./board-creation";
 
 const app = new Hono<{ Bindings: Env; Variables: { owner: string } }>();
 app.use("/api/*", async (c, next) => {
@@ -106,6 +107,10 @@ app.put("/api/board", async (c) => {
 });
 app.all("/api/*", (c) => c.json({ error: "찾을 수 없는 API입니다." }, 404));
 app.onError((error, c) => {
+  if (error instanceof BoardCreationError) {
+    if (error.status === 429) c.header("Retry-After", "60");
+    return c.json({ error: error.message }, error.status);
+  }
   console.error("API request failed:", error.name);
   return c.json(
     { error: "서버 요청에 실패했습니다. 잠시 후 다시 시도해주세요." },

@@ -46,7 +46,7 @@ beforeAll(async () => {
   await db.exec(
     readFileSync("migrations/0001_initial.sql", "utf8").replace(/\n/g, " "),
   );
-  for (const id of ["alice", "bob"]) {
+  for (const id of ["alice", "bob", "quota", "race", "burst", "mixed"]) {
     await db
       .prepare(
         "INSERT INTO user(id,name,email,email_verified,created_at,updated_at) VALUES(?,?,?,1,?,?)",
@@ -171,4 +171,125 @@ it("preserves edits made by the old worker during the deployment transition", as
   ).json()) as any;
   expect(detail.goals[0].title).toBe("전환 중 수정");
   expect(detail.revision).toBe(8);
+});
+
+// These tests exercise the real D1 statement: a preflight-only count check
+// would let concurrent requests exceed the account quota.
+async function seedBoards(owner: string, count: number) {
+  const now = new Date(Date.now() - 120_000).toISOString();
+  await env.DB.batch(
+    Array.from({ length: count }, (_, i) =>
+      env.DB.prepare(
+        "INSERT INTO boards(id,owner_id,title,revision,snapshot,created_at,updated_at) VALUES(?,?,?,0,?,?,?)",
+      ).bind(
+        `${owner}-${i}`,
+        owner,
+        "기존 보드",
+        JSON.stringify([newRoot()]),
+        now,
+        now,
+      ),
+    ),
+  );
+}
+it("blocks creation at the active-board quota and frees a slot after deletion", async () => {
+  await seedBoards("quota", 50);
+  expect(
+    (await request("/api/boards", "POST", { title: "초과" }, "quota")).status,
+  ).toBe(409);
+  expect(
+    (
+      await request(
+        "/api/boards/quota-0",
+        "DELETE",
+        { expectedRevision: 0 },
+        "quota",
+      )
+    ).status,
+  ).toBe(200);
+  expect(
+    (await request("/api/boards", "POST", { title: "빈 자리" }, "quota"))
+      .status,
+  ).toBe(201);
+  // The compatibility API must not create an extra board beyond the cap.
+  expect((await request("/api/board", "GET", undefined, "quota")).status).toBe(
+    409,
+  );
+  // A full account must not stop a different owner from creating a board.
+  expect(
+    (await request("/api/boards", "POST", { title: "다른 계정" }, "bob"))
+      .status,
+  ).toBe(201);
+});
+it("allows only one concurrent creation when a single quota slot remains", async () => {
+  await seedBoards("race", 49);
+  const responses = await Promise.all([
+    request("/api/boards", "POST", { title: "동시 A" }, "race"),
+    request("/api/boards", "POST", { title: "동시 B" }, "race"),
+  ]);
+  expect(responses.map((r) => r.status).sort()).toEqual([201, 409]);
+  const row = await env.DB.prepare(
+    "SELECT COUNT(*) AS count FROM boards WHERE owner_id=? AND deleted_at IS NULL",
+  )
+    .bind("race")
+    .first<{ count: number }>();
+  expect(row?.count).toBe(50);
+});
+it("limits concurrent bursts, counts deleted creations, and allows creation after the window", async () => {
+  const responses = await Promise.all(
+    Array.from({ length: 6 }, (_, i) =>
+      request("/api/boards", "POST", { title: `연속 ${i}` }, "burst"),
+    ),
+  );
+  expect(responses.map((r) => r.status).sort()).toEqual([
+    201, 201, 201, 201, 201, 429,
+  ]);
+  const limited = responses.find((r) => r.status === 429)!;
+  expect(Number(limited.headers.get("retry-after"))).toBeGreaterThan(0);
+  const created = (await responses.find((r) => r.status === 201)!.json()) as {
+    id: string;
+  };
+  expect(
+    (
+      await request(
+        `/api/boards/${created.id}`,
+        "DELETE",
+        { expectedRevision: 0 },
+        "burst",
+      )
+    ).status,
+  ).toBe(200);
+  expect(
+    (await request("/api/boards", "POST", { title: "삭제 우회" }, "burst"))
+      .status,
+  ).toBe(429);
+  expect((await request("/api/board", "GET", undefined, "burst")).status).toBe(
+    429,
+  );
+  await env.DB.prepare("UPDATE boards SET created_at=? WHERE owner_id=?")
+    .bind(new Date(Date.now() - 120_000).toISOString(), "burst")
+    .run();
+  expect(
+    (await request("/api/boards", "POST", { title: "다시 생성" }, "burst"))
+      .status,
+  ).toBe(201);
+});
+
+it("shares the atomic burst limit between current and legacy creation paths", async () => {
+  const responses = await Promise.all([
+    request("/api/board", "GET", undefined, "mixed"),
+    ...Array.from({ length: 5 }, (_, i) =>
+      request("/api/boards", "POST", { title: `혼합 ${i}` }, "mixed"),
+    ),
+  ]);
+  expect(
+    responses.filter((r) => r.status === 200 || r.status === 201),
+  ).toHaveLength(5);
+  expect(responses.filter((r) => r.status === 429)).toHaveLength(1);
+  const row = await env.DB.prepare(
+    "SELECT COUNT(*) AS count FROM boards WHERE owner_id=?",
+  )
+    .bind("mixed")
+    .first<{ count: number }>();
+  expect(row?.count).toBe(5);
 });
